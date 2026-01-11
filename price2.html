@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISP BI Dashboard | Accurate Market View</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0b1120;
+            --sidebar: #111b33;
+            --card: #1e293b;
+            --accent: #38bdf8;
+            --text-main: #f3f4f6;
+            --text-dim: #9ca3af;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-right: 1px solid #1e293b;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .stat-card small { color: var(--text-dim); font-size: 10px; text-transform: uppercase; }
+        .stat-card div { font-size: 18px; font-weight: bold; color: var(--accent); }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 15px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .box {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { position: sticky; top: 0; background: #334155; padding: 10px; text-align: left; z-index: 5; color: var(--accent); }
+        td { padding: 8px 10px; border-bottom: 1px solid #334155; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            color: white;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; color: white; font-weight: bold; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <h2 style="color: var(--accent); margin: 0; font-size: 1.4rem;">Market BI</h2>
+    
+    <div>
+        <label><small>EXACT SEARCH</small></label>
+        <input type="text" id="searchInput" placeholder="Search Speed or ISP..." onkeyup="updateUI()">
+    </div>
+
+    <div>
+        <label><small>FILTER BY PROVIDER</small></label>
+        <select id="ispFilter" onchange="updateUI()">
+            <option value="All">All ISPs</option>
+            <option value="AccessTel">AccessTel</option>
+            <option value="RangsIT">RangsIT</option>
+            <option value="Orbit">Orbit</option>
+            <option value="ICC">ICC</option>
+            <option value="IncomIT">IncomIT</option>
+        </select>
+    </div>
+
+    <div>
+        <label><small>SELECT PRICE RANGE (TK)</small></label>
+        <select id="priceFilter" onchange="updateUI()">
+            <option value="All">All Prices</option>
+            <option value="500-600">500 - 600 TK</option>
+            <option value="601-800">601 - 800 TK</option>
+            <option value="801-1100">801 - 1100 TK</option>
+            <option value="1101-1500">1101 - 1500 TK</option>
+            <option value="1501-2000">1501 - 2000 TK</option>
+            <option value="2001-3000">2001 - 3000 TK</option>
+            <option value="3001-9999">Above 3000 TK</option>
+        </select>
+    </div>
+</aside>
+
+<main class="main-content">
+    <div class="stats-grid">
+        <div class="stat-card"><small>Matches</small><div id="statTotal">0</div></div>
+        <div class="stat-card"><small>Highest Speed</small><div id="statSpeed">0</div></div>
+        <div class="stat-card"><small>Average Price</small><div id="statAvg">0</div></div>
+        <div class="stat-card"><small>Best Value</small><div id="statValue">0</div></div>
+    </div>
+
+    <div class="dashboard-layout">
+        <div class="box">
+            <h3 style="margin:0; font-size:14px; color:var(--accent)">MASTER DATA SHEET</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ISP</th>
+                            <th>SPEED</th>
+                            <th>PRICE</th>
+                            <th>SCORE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="box">
+            <h3 style="margin:0; font-size:14px; color:var(--accent)">VISUAL COMPARISON</h3>
+            <div style="flex:1; min-height:0; margin-top:10px;">
+                <canvas id="marketChart"></canvas>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const fullData = [
+        {isp:'AccessTel', bw:20, p:500}, {isp:'AccessTel', bw:25, p:600}, {isp:'AccessTel', bw:30, p:700}, {isp:'AccessTel', bw:40, p:800}, {isp:'AccessTel', bw:50, p:1000}, {isp:'AccessTel', bw:60, p:1200}, {isp:'AccessTel', bw:70, p:1500}, {isp:'AccessTel', bw:80, p:2000}, {isp:'AccessTel', bw:100, p:3000},
+        {isp:'RangsIT', bw:15, p:500}, {isp:'RangsIT', bw:18, p:525}, {isp:'RangsIT', bw:25, p:600}, {isp:'RangsIT', bw:35, p:700}, {isp:'RangsIT', bw:40, p:800}, {isp:'RangsIT', bw:55, p:1050}, {isp:'RangsIT', bw:70, p:1400}, {isp:'RangsIT', bw:100, p:2250}, {isp:'RangsIT', bw:125, p:3000}, {isp:'RangsIT', bw:250, p:6000},
+        {isp:'Orbit', bw:20, p:500}, {isp:'Orbit', bw:25, p:525}, {isp:'Orbit', bw:40, p:650}, {isp:'Orbit', bw:45, p:750}, {isp:'Orbit', bw:100, p:1050}, {isp:'Orbit', bw:120, p:1200}, {isp:'Orbit', bw:150, p:1500}, {isp:'Orbit', bw:175, p:1750}, {isp:'Orbit', bw:200, p:2000}, {isp:'Orbit', bw:240, p:2400}, {isp:'Orbit', bw:350, p:3400}, {isp:'Orbit', bw:400, p:4400}, {isp:'Orbit', bw:500, p:5400}, {isp:'Orbit', bw:650, p:8400},
+        {isp:'ICC', bw:20, p:500}, {isp:'ICC', bw:30, p:600}, {isp:'ICC', bw:40, p:650}, {isp:'ICC', bw:50, p:750}, {isp:'ICC', bw:100, p:1050}, {isp:'ICC', bw:125, p:1200}, {isp:'ICC', bw:150, p:1500}, {isp:'ICC', bw:200, p:2000}, {isp:'ICC', bw:220, p:2250}, {isp:'ICC', bw:250, p:2500}, {isp:'ICC', bw:300, p:3000},
+        {isp:'IncomIT', bw:20, p:525}, {isp:'IncomIT', bw:30, p:630}, {isp:'IncomIT', bw:40, p:650}, {isp:'IncomIT', bw:50, p:750}, {isp:'IncomIT', bw:60, p:1050}, {isp:'IncomIT', bw:70, p:1200}, {isp:'IncomIT', bw:80, p:1500}, {isp:'IncomIT', bw:100, p:1890}, {isp:'IncomIT', bw:120, p:2100}, {isp:'IncomIT', bw:150, p:2625}, {isp:'IncomIT', bw:180, p:3000}, {isp:'IncomIT', bw:2000, p:3675}
+    ];
+
+    let chart;
+    const colors = { 'AccessTel':'#a855f7', 'RangsIT':'#f97316', 'Orbit':'#3b82f6', 'ICC':'#22c55e', 'IncomIT':'#ec4899' };
+
+    function updateUI() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        const isp = document.getElementById('ispFilter').value;
+        const priceRange = document.getElementById('priceFilter').value;
+
+        const filtered = fullData.filter(d => {
+            const matchesQuery = d.isp.toLowerCase().includes(query) || d.bw.toString() === query || d.p.toString() === query;
+            const matchesISP = (isp === 'All' || d.isp === isp);
+            
+            let matchesPrice = true;
+            if (priceRange !== 'All') {
+                const [min, max] = priceRange.split('-').map(Number);
+                matchesPrice = (d.p >= min && d.p <= max);
+            }
+            
+            return (query === "" || matchesQuery) && matchesISP && matchesPrice;
+        });
+
+        document.getElementById('statTotal').innerText = filtered.length;
+        document.getElementById('statSpeed').innerText = (filtered.length ? Math.max(...filtered.map(d=>d.bw)) : 0) + ' Mbps';
+        const avg = filtered.length ? filtered.reduce((a,c)=>a+c.p,0)/filtered.length : 0;
+        document.getElementById('statAvg').innerText = '৳' + avg.toFixed(0);
+        const best = filtered.length ? Math.max(...filtered.map(d=>d.bw/d.p)) : 0;
+        document.getElementById('statValue').innerText = best.toFixed(4);
+
+        const tbody = document.getElementById('dataTable');
+        tbody.innerHTML = filtered.sort((a,b)=>a.p - b.p).map(d => `
+            <tr>
+                <td><span class="badge" style="background:${colors[d.isp]}">${d.isp}</span></td>
+                <td><b>${d.bw} Mbps</b></td>
+                <td>৳${d.p}</td>
+                <td style="color:var(--accent)">${(d.bw/d.p).toFixed(4)}</td>
+            </tr>
+        `).join('');
+
+        renderChart(filtered);
+    }
+
+    function renderChart(data) {
+        const ctx = document.getElementById('marketChart').getContext('2d');
+        if(chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.isp + ' ' + d.bw + 'M'),
+                datasets: [{
+                    label: 'Price (TK)',
+                    data: data.map(d => d.p),
+                    backgroundColor: data.map(d => colors[d.isp]),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { display: false }, grid: { display: false } },
+                    y: { grid: { color: '#334155' }, ticks: { color: '#9ca3af' } }
+                }
+            }
+        });
+    }
+
+    updateUI();
+</script>
+</body>
+</html>
