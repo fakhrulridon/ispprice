@@ -112,16 +112,17 @@
     <h2 style="color: var(--accent); margin: 0; font-size: 1.4rem;">Data By Fakhrul</h2>
     
     <div>
-        <label><small>EXACT SEARCH</small></label>
-        <input type="text" id="searchInput" placeholder="Search Speed or ISP..." onkeyup="updateUI()">
+        <label><small>SMART SEARCH</small></label>
+        <input type="text" id="searchInput" placeholder="Search Speed, Price or ISP..." onkeyup="updateUI()">
     </div>
 
     <div>
         <label><small>FILTER BY PROVIDER</small></label>
         <select id="ispFilter" onchange="updateUI()">
             <option value="All">All ISPs</option>
+            <option value="AccessTel (New Marketing)">AccessTel (New Marketing)</option>
+            <option value="AccessTel">AccessTel (Old)</option>
             <option value="Udoy">Udoy</option>
-            <option value="AccessTel">AccessTel</option>
             <option value="RangsIT">RangsIT</option>
             <option value="Orbit">Orbit</option>
             <option value="ICC">ICC</option>
@@ -139,7 +140,7 @@
             <option value="1101-1500">1101 - 1500 TK</option>
             <option value="1501-2000">1501 - 2000 TK</option>
             <option value="2001-3000">2001 - 3000 TK</option>
-            <option value="3001-9999">Above 3000 TK</option>
+            <option value="3001-99999">Above 3000 TK</option>
         </select>
     </div>
 </aside>
@@ -149,7 +150,7 @@
         <div class="stat-card"><small>Matches</small><div id="statTotal">0</div></div>
         <div class="stat-card"><small>Highest Speed</small><div id="statSpeed">0</div></div>
         <div class="stat-card"><small>Average Price</small><div id="statAvg">0</div></div>
-        <div class="stat-card"><small>Best Value</small><div id="statValue">0</div></div>
+        <div class="stat-card"><small>Best Value Score</small><div id="statValue">0</div></div>
     </div>
 
     <div class="dashboard-layout">
@@ -162,7 +163,7 @@
                             <th>ISP</th>
                             <th>SPEED</th>
                             <th>PRICE</th>
-                            <th>SCORE</th>
+                            <th>SCORE (BW/P)</th>
                         </tr>
                     </thead>
                     <tbody id="dataTable"></tbody>
@@ -181,19 +182,40 @@
 
 <script>
     const fullData = [
-        // New Data: Udoy
+        // Data From Image: AccessTel (New Marketing Requirement)
+        {isp:'AccessTel (New Marketing)', bw:22, p:500}, 
+        {isp:'AccessTel (New Marketing)', bw:25, p:525}, 
+        {isp:'AccessTel (New Marketing)', bw:40, p:600}, 
+        {isp:'AccessTel (New Marketing)', bw:42, p:650}, 
+        {isp:'AccessTel (New Marketing)', bw:45, p:700}, 
+        {isp:'AccessTel (New Marketing)', bw:80, p:1000}, 
+        {isp:'AccessTel (New Marketing)', bw:110, p:1200}, 
+        {isp:'AccessTel (New Marketing)', bw:180, p:1750}, 
+        {isp:'AccessTel (New Marketing)', bw:200, p:2000},
+        
+        // Udoy
         {isp:'Udoy', bw:25, p:500}, {isp:'Udoy', bw:28, p:525}, {isp:'Udoy', bw:30, p:620}, {isp:'Udoy', bw:35, p:700}, {isp:'Udoy', bw:40, p:800}, {isp:'Udoy', bw:50, p:900}, {isp:'Udoy', bw:55, p:1000}, {isp:'Udoy', bw:60, p:1200}, {isp:'Udoy', bw:65, p:1300}, {isp:'Udoy', bw:70, p:1500}, {isp:'Udoy', bw:75, p:1600}, {isp:'Udoy', bw:80, p:1750}, {isp:'Udoy', bw:85, p:2000},
         
-        // Existing Data
+        // Old AccessTel
         {isp:'AccessTel', bw:20, p:500}, {isp:'AccessTel', bw:25, p:600}, {isp:'AccessTel', bw:30, p:700}, {isp:'AccessTel', bw:40, p:800}, {isp:'AccessTel', bw:50, p:1000}, {isp:'AccessTel', bw:60, p:1200}, {isp:'AccessTel', bw:70, p:1500}, {isp:'AccessTel', bw:80, p:2000}, {isp:'AccessTel', bw:100, p:3000},
-        {isp:'RangsIT', bw:15, p:500}, {isp:'RangsIT', bw:18, p:525}, {isp:'RangsIT', bw:25, p:600}, {isp:'RangsIT', bw:35, p:700}, {isp:'RangsIT', bw:40, p:800}, {isp:'RangsIT', bw:55, p:1050}, {isp:'RangsIT', bw:70, p:1400}, {isp:'RangsIT', bw:100, p:2250}, {isp:'RangsIT', bw:125, p:3000}, {isp:'RangsIT', bw:250, p:6000},
-        {isp:'Orbit', bw:20, p:500}, {isp:'Orbit', bw:25, p:525}, {isp:'Orbit', bw:40, p:650}, {isp:'Orbit', bw:45, p:750}, {isp:'Orbit', bw:100, p:1050}, {isp:'Orbit', bw:120, p:1200}, {isp:'Orbit', bw:150, p:1500}, {isp:'Orbit', bw:175, p:1750}, {isp:'Orbit', bw:200, p:2000}, {isp:'Orbit', bw:240, p:2400}, {isp:'Orbit', bw:350, p:3400}, {isp:'Orbit', bw:400, p:4400}, {isp:'Orbit', bw:500, p:5400}, {isp:'Orbit', bw:650, p:8400},
-        {isp:'ICC', bw:20, p:500}, {isp:'ICC', bw:30, p:600}, {isp:'ICC', bw:40, p:650}, {isp:'ICC', bw:50, p:750}, {isp:'ICC', bw:100, p:1050}, {isp:'ICC', bw:125, p:1200}, {isp:'ICC', bw:150, p:1500}, {isp:'ICC', bw:200, p:2000}, {isp:'ICC', bw:220, p:2250}, {isp:'ICC', bw:250, p:2500}, {isp:'ICC', bw:300, p:3000},
-        {isp:'IncomIT', bw:20, p:525}, {isp:'IncomIT', bw:30, p:630}, {isp:'IncomIT', bw:40, p:650}, {isp:'IncomIT', bw:50, p:750}, {isp:'IncomIT', bw:60, p:1050}, {isp:'IncomIT', bw:70, p:1200}, {isp:'IncomIT', bw:80, p:1500}, {isp:'IncomIT', bw:100, p:1890}, {isp:'IncomIT', bw:120, p:2100}, {isp:'IncomIT', bw:150, p:2625}, {isp:'IncomIT', bw:180, p:3000}, {isp:'IncomIT', bw:2000, p:3675}
+        
+        // Others
+        {isp:'RangsIT', bw:15, p:500}, {isp:'RangsIT', bw:18, p:525}, {isp:'RangsIT', bw:25, p:600}, {isp:'RangsIT', bw:100, p:2250}, {isp:'RangsIT', bw:250, p:6000},
+        {isp:'Orbit', bw:20, p:500}, {isp:'Orbit', bw:100, p:1050}, {isp:'Orbit', bw:200, p:2000}, {isp:'Orbit', bw:500, p:5400},
+        {isp:'ICC', bw:20, p:500}, {isp:'ICC', bw:40, p:650}, {isp:'ICC', bw:100, p:1050}, {isp:'ICC', bw:300, p:3000},
+        {isp:'IncomIT', bw:20, p:525}, {isp:'IncomIT', bw:100, p:1890}, {isp:'IncomIT', bw:2000, p:3675}
     ];
 
     let chart;
-    const colors = { 'Udoy':'#facc15', 'AccessTel':'#a855f7', 'RangsIT':'#f97316', 'Orbit':'#3b82f6', 'ICC':'#22c55e', 'IncomIT':'#ec4899' };
+    const colors = { 
+        'AccessTel (New Marketing)':'#f43f5e', 
+        'Udoy':'#facc15', 
+        'AccessTel':'#a855f7', 
+        'RangsIT':'#f97316', 
+        'Orbit':'#3b82f6', 
+        'ICC':'#22c55e', 
+        'IncomIT':'#ec4899' 
+    };
 
     function updateUI() {
         const query = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -201,7 +223,12 @@
         const priceRange = document.getElementById('priceFilter').value;
 
         const filtered = fullData.filter(d => {
-            const matchesQuery = d.isp.toLowerCase().includes(query) || d.bw.toString() === query || d.p.toString() === query;
+            // Updated Search Logic: Matches ISP name OR exact Speed OR exact Price
+            const matchesQuery = d.isp.toLowerCase().includes(query) || 
+                                d.bw.toString() === query || 
+                                d.p.toString() === query ||
+                                (query.length > 1 && d.bw.toString().startsWith(query));
+
             const matchesISP = (isp === 'All' || d.isp === isp);
             
             let matchesPrice = true;
@@ -223,7 +250,7 @@
         const tbody = document.getElementById('dataTable');
         tbody.innerHTML = filtered.sort((a,b)=>a.p - b.p).map(d => `
             <tr>
-                <td><span class="badge" style="background:${colors[d.isp]}">${d.isp}</span></td>
+                <td><span class="badge" style="background:${colors[d.isp] || '#6366f1'}">${d.isp}</span></td>
                 <td><b>${d.bw} Mbps</b></td>
                 <td>৳${d.p}</td>
                 <td style="color:var(--accent)">${(d.bw/d.p).toFixed(4)}</td>
@@ -239,11 +266,11 @@
         chart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(d => d.isp + ' ' + d.bw + 'M'),
+                labels: data.map(d => d.isp.split(' ')[0] + ' ' + d.bw + 'M'),
                 datasets: [{
                     label: 'Price (TK)',
                     data: data.map(d => d.p),
-                    backgroundColor: data.map(d => colors[d.isp]),
+                    backgroundColor: data.map(d => colors[d.isp] || '#6366f1'),
                     borderRadius: 6
                 }]
             },
