@@ -46,9 +46,9 @@
         <label><small>PRICE LIMIT</small></label>
         <select id="priceFilter" onchange="updateUI()">
             <option value="All">All Prices</option>
-            <option value="0-1000">Under 1000</option>
-            <option value="1001-2000">1001 - 2000</option>
-            <option value="2001-99999">Above 2000</option>
+            <option value="0-600">Under 600</option>
+            <option value="601-1000">601 - 1000</option>
+            <option value="1001-99999">Above 1000</option>
         </select>
     </div>
     <button onclick="fetchData()" style="padding: 10px; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; color: #0b1120; font-weight: bold;">Refresh Data</button>
@@ -79,7 +79,7 @@
 </main>
 
 <script>
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQkAq1_jVuTCRqMZNJrEBXczgCch8_KRGcqZVLETh7krJKrXyv0xSO9q5CGuie9kHgGuBxZD79N8tu/pub?output=csv';
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQkAq1_jVuTCRqMZNJrEBXczgCch8_KRGcqZVLETh7krJKrXyv0xSO9q5CGuie9kHgGuBxZD79N8tu/pub?gid=964821390&single=true&output=csv';
     let fullData = [];
     let chart;
     const colors = { 'Udoy':'#facc15', 'AccessTel':'#a855f7', 'RangsIT':'#f97316', 'Orbit':'#3b82f6', 'ICC':'#22c55e', 'IncomIT':'#ec4899' };
@@ -90,12 +90,20 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                // Mapping based on your Google Sheet headers: Price, ISP, Bandwidth_Mbps
-                fullData = results.data.map(d => ({
-                    isp: d.ISP ? d.ISP.trim() : 'Unknown',
-                    bw: parseInt(d.Bandwidth_Mbps) || 0,
-                    p: parseInt(d.Price) || 0
-                })).filter(d => d.bw > 0);
+                // Headers clean kora hocche jate space ba case-er somoshya na thake
+                fullData = results.data.map(d => {
+                    // Keys gulo list kora hocche mapping-er jonno
+                    const keys = Object.keys(d);
+                    const ispKey = keys.find(k => k.trim().toLowerCase() === 'isp');
+                    const priceKey = keys.find(k => k.trim().toLowerCase() === 'price');
+                    const bwKey = keys.find(k => k.trim().toLowerCase().includes('bandwidth') || k.trim().toLowerCase() === 'bw');
+
+                    return {
+                        isp: d[ispKey] ? d[ispKey].trim() : 'Unknown',
+                        bw: parseInt(d[bwKey]) || 0,
+                        p: parseInt(d[priceKey]) || 0
+                    };
+                }).filter(d => d.bw > 0 && d.p > 0);
                 
                 populateISPFilter();
                 updateUI();
