@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISP BI Dashboard | Accurate Market View</title>
+    <title>ISP BI Dashboard | Data By Fakhrul</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -120,6 +120,7 @@
         <label><small>FILTER BY PROVIDER</small></label>
         <select id="ispFilter" onchange="updateUI()">
             <option value="All">All ISPs</option>
+            <option value="Udoy">Udoy</option>
             <option value="AccessTel">AccessTel</option>
             <option value="RangsIT">RangsIT</option>
             <option value="Orbit">Orbit</option>
@@ -180,6 +181,10 @@
 
 <script>
     const fullData = [
+        // New Data: Udoy
+        {isp:'Udoy', bw:25, p:500}, {isp:'Udoy', bw:28, p:525}, {isp:'Udoy', bw:30, p:620}, {isp:'Udoy', bw:35, p:700}, {isp:'Udoy', bw:40, p:800}, {isp:'Udoy', bw:50, p:900}, {isp:'Udoy', bw:55, p:1000}, {isp:'Udoy', bw:60, p:1200}, {isp:'Udoy', bw:65, p:1300}, {isp:'Udoy', bw:70, p:1500}, {isp:'Udoy', bw:75, p:1600}, {isp:'Udoy', bw:80, p:1750}, {isp:'Udoy', bw:85, p:2000},
+        
+        // Existing Data
         {isp:'AccessTel', bw:20, p:500}, {isp:'AccessTel', bw:25, p:600}, {isp:'AccessTel', bw:30, p:700}, {isp:'AccessTel', bw:40, p:800}, {isp:'AccessTel', bw:50, p:1000}, {isp:'AccessTel', bw:60, p:1200}, {isp:'AccessTel', bw:70, p:1500}, {isp:'AccessTel', bw:80, p:2000}, {isp:'AccessTel', bw:100, p:3000},
         {isp:'RangsIT', bw:15, p:500}, {isp:'RangsIT', bw:18, p:525}, {isp:'RangsIT', bw:25, p:600}, {isp:'RangsIT', bw:35, p:700}, {isp:'RangsIT', bw:40, p:800}, {isp:'RangsIT', bw:55, p:1050}, {isp:'RangsIT', bw:70, p:1400}, {isp:'RangsIT', bw:100, p:2250}, {isp:'RangsIT', bw:125, p:3000}, {isp:'RangsIT', bw:250, p:6000},
         {isp:'Orbit', bw:20, p:500}, {isp:'Orbit', bw:25, p:525}, {isp:'Orbit', bw:40, p:650}, {isp:'Orbit', bw:45, p:750}, {isp:'Orbit', bw:100, p:1050}, {isp:'Orbit', bw:120, p:1200}, {isp:'Orbit', bw:150, p:1500}, {isp:'Orbit', bw:175, p:1750}, {isp:'Orbit', bw:200, p:2000}, {isp:'Orbit', bw:240, p:2400}, {isp:'Orbit', bw:350, p:3400}, {isp:'Orbit', bw:400, p:4400}, {isp:'Orbit', bw:500, p:5400}, {isp:'Orbit', bw:650, p:8400},
@@ -188,7 +193,7 @@
     ];
 
     let chart;
-    const colors = { 'AccessTel':'#a855f7', 'RangsIT':'#f97316', 'Orbit':'#3b82f6', 'ICC':'#22c55e', 'IncomIT':'#ec4899' };
+    const colors = { 'Udoy':'#facc15', 'AccessTel':'#a855f7', 'RangsIT':'#f97316', 'Orbit':'#3b82f6', 'ICC':'#22c55e', 'IncomIT':'#ec4899' };
 
     function updateUI() {
         const query = document.getElementById('searchInput').value.toLowerCase().trim();
