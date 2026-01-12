@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Google Sheet ISP Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg: #0b1120; --sidebar: #111b33; --card: #1e293b; --accent: #38bdf8;
+            --text-main: #f3f4f6; --text-dim: #9ca3af;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background: var(--sidebar); padding: 20px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid #1e293b; }
+        .main-content { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; border: 1px solid #334155; text-align: center; }
+        .stat-card div { font-size: 18px; font-weight: bold; color: var(--accent); }
+        .dashboard-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 15px; flex: 1; min-height: 0; }
+        .box { background: var(--card); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; border: 1px solid #334155; overflow: hidden; }
+        .table-container { flex: 1; overflow-y: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { position: sticky; top: 0; background: #334155; padding: 10px; text-align: left; z-index: 5; color: var(--accent); }
+        td { padding: 8px 10px; border-bottom: 1px solid #334155; }
+        input, select { width: 100%; padding: 12px; background: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; color: white; font-weight: bold; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <h2 style="color: var(--accent); margin: 0; font-size: 1.4rem;">Live Sheet Sync</h2>
+    <div>
+        <label><small>SEARCH</small></label>
+        <input type="text" id="searchInput" placeholder="Search..." onkeyup="updateUI()">
+    </div>
+    <div>
+        <label><small>PRICE RANGE</small></label>
+        <select id="priceFilter" onchange="updateUI()">
+            <option value="All">All Prices</option>
+            <option value="500-600">500 - 600 TK</option>
+            <option value="601-1000">601 - 1000 TK</option>
+            <option value="1001-3000">1001 - 3000 TK</option>
+            <option value="3001-9999">Above 3000 TK</option>
+        </select>
+    </div>
+    <button onclick="fetchData()" style="padding: 10px; background: var(--accent); border: none; border-radius: 5px; cursor: pointer;">Refresh Data</button>
+</aside>
+
+<main class="main-content">
+    <div class="stats-grid" id="stats">
+        <div class="stat-card"><small>Packages</small><div id="statTotal">0</div></div>
+        <div class="stat-card"><small>Max Speed</small><div id="statSpeed">0</div></div>
+        <div class="stat-card"><small>Avg Price</small><div id="statAvg">0</div></div>
+        <div class="stat-card"><small>Best Score</small><div id="statValue">0</div></div>
+    </div>
+    <div class="dashboard-layout">
+        <div class="box">
+            <h3 style="margin:0; font-size:14px; color:var(--accent)">DATA FROM GOOGLE SHEET</h3>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>ISP</th><th>SPEED</th><th>PRICE</th><th>SCORE</th></tr></thead>
+                    <tbody id="dataTable"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="box">
+            <h3 style="margin:0; font-size:14px; color:var(--accent)">LIVE CHART</h3>
+            <div style="flex:1; min-height:0; margin-top:10px;"><canvas id="marketChart"></canvas></div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const sheetURL = 'YOUR_SHEET_CSV_URL_HERE'; // <--- Paste your Published CSV link here
+    let fullData = [];
+    let chart;
+
+    async function fetchData() {
+        Papa.parse(sheetURL, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                fullData = results.data.filter(d => d.isp && d.bw && d.p);
+                updateUI();
+            }
+        });
+    }
+
+    function updateUI() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        const priceRange = document.getElementById('priceFilter').value;
+
+        const filtered = fullData.filter(d => {
+            const matchesQuery = d.isp.toLowerCase().includes(query) || d.bw.toString() === query;
+            let matchesPrice = true;
+            if (priceRange !== 'All') {
+                const [min, max] = priceRange.split('-').map(Number);
+                matchesPrice = (d.p >= min && d.p <= max);
+            }
+            return (query === "" || matchesQuery) && matchesPrice;
+        });
+
+        document.getElementById('statTotal').innerText = filtered.length;
+        document.getElementById('statSpeed').innerText = (filtered.length ? Math.max(...filtered.map(d=>d.bw)) : 0) + ' Mbps';
+        const avg = filtered.length ? filtered.reduce((a,c)=>a+c.p,0)/filtered.length : 0;
+        document.getElementById('statAvg').innerText = '৳' + avg.toFixed(0);
+        
+        const tbody = document.getElementById('dataTable');
+        tbody.innerHTML = filtered.map(d => `
+            <tr>
+                <td><span class="badge" style="background:#38bdf8">${d.isp}</span></td>
+                <td><b>${d.bw} Mbps</b></td>
+                <td>৳${d.p}</td>
+                <td>${(d.bw/d.p).toFixed(4)}</td>
+            </tr>
+        `).join('');
+
+        renderChart(filtered);
+    }
+
+    function renderChart(data) {
+        const ctx = document.getElementById('marketChart').getContext('2d');
+        if(chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.isp + ' ' + d.bw + 'M'),
+                datasets: [{ label: 'Price', data: data.map(d => d.p), backgroundColor: '#38bdf8', borderRadius: 5 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    fetchData(); // Initial load
+    setInterval(fetchData, 30000); // Auto-refresh every 30 seconds
+</script>
+</body>
+</html>
