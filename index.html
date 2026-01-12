@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Google Sheet ISP Dashboard</title>
+    <title>Live ISP Dashboard | Data By Fakhrul</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
@@ -16,6 +16,7 @@
         .main-content { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 10px; border: 1px solid #334155; text-align: center; }
+        .stat-card small { color: var(--text-dim); font-size: 10px; text-transform: uppercase; }
         .stat-card div { font-size: 18px; font-weight: bold; color: var(--accent); }
         .dashboard-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 15px; flex: 1; min-height: 0; }
         .box { background: var(--card); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; border: 1px solid #334155; overflow: hidden; }
@@ -23,7 +24,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { position: sticky; top: 0; background: #334155; padding: 10px; text-align: left; z-index: 5; color: var(--accent); }
         td { padding: 8px 10px; border-bottom: 1px solid #334155; }
-        input, select { width: 100%; padding: 12px; background: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; }
+        input, select { width: 100%; padding: 12px; background: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; box-sizing: border-box; outline: none; }
         .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; color: white; font-weight: bold; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -32,34 +33,37 @@
 <body>
 
 <aside class="sidebar">
-    <h2 style="color: var(--accent); margin: 0; font-size: 1.4rem;">Live Sheet Sync</h2>
+    <h2 style="color: var(--accent); margin: 0; font-size: 1.4rem;">Data By Fakhrul</h2>
     <div>
-        <label><small>SEARCH</small></label>
-        <input type="text" id="searchInput" placeholder="Search..." onkeyup="updateUI()">
+        <label><small>LIVE SEARCH</small></label>
+        <input type="text" id="searchInput" placeholder="Type price or speed..." onkeyup="updateUI()">
     </div>
     <div>
-        <label><small>PRICE RANGE</small></label>
+        <label><small>PROVIDER</small></label>
+        <select id="ispFilter" onchange="updateUI()"></select>
+    </div>
+    <div>
+        <label><small>PRICE LIMIT</small></label>
         <select id="priceFilter" onchange="updateUI()">
             <option value="All">All Prices</option>
-            <option value="500-600">500 - 600 TK</option>
-            <option value="601-1000">601 - 1000 TK</option>
-            <option value="1001-3000">1001 - 3000 TK</option>
-            <option value="3001-9999">Above 3000 TK</option>
+            <option value="0-1000">Under 1000</option>
+            <option value="1001-2000">1001 - 2000</option>
+            <option value="2001-99999">Above 2000</option>
         </select>
     </div>
-    <button onclick="fetchData()" style="padding: 10px; background: var(--accent); border: none; border-radius: 5px; cursor: pointer;">Refresh Data</button>
+    <button onclick="fetchData()" style="padding: 10px; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; color: #0b1120; font-weight: bold;">Refresh Data</button>
 </aside>
 
 <main class="main-content">
-    <div class="stats-grid" id="stats">
-        <div class="stat-card"><small>Packages</small><div id="statTotal">0</div></div>
-        <div class="stat-card"><small>Max Speed</small><div id="statSpeed">0</div></div>
-        <div class="stat-card"><small>Avg Price</small><div id="statAvg">0</div></div>
-        <div class="stat-card"><small>Best Score</small><div id="statValue">0</div></div>
+    <div class="stats-grid">
+        <div class="stat-card"><small>Matches</small><div id="statTotal">0</div></div>
+        <div class="stat-card"><small>Highest Speed</small><div id="statSpeed">0</div></div>
+        <div class="stat-card"><small>Average Price</small><div id="statAvg">0</div></div>
+        <div class="stat-card"><small>Best Value</small><div id="statValue">0</div></div>
     </div>
     <div class="dashboard-layout">
         <div class="box">
-            <h3 style="margin:0; font-size:14px; color:var(--accent)">DATA FROM GOOGLE SHEET</h3>
+            <h3 style="margin:0; font-size:14px; color:var(--accent)">MASTER DATA SHEET</h3>
             <div class="table-container">
                 <table>
                     <thead><tr><th>ISP</th><th>SPEED</th><th>PRICE</th><th>SCORE</th></tr></thead>
@@ -68,55 +72,73 @@
             </div>
         </div>
         <div class="box">
-            <h3 style="margin:0; font-size:14px; color:var(--accent)">LIVE CHART</h3>
+            <h3 style="margin:0; font-size:14px; color:var(--accent)">VISUAL COMPARISON</h3>
             <div style="flex:1; min-height:0; margin-top:10px;"><canvas id="marketChart"></canvas></div>
         </div>
     </div>
 </main>
 
 <script>
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQkAq1_jVuTCRqMZNJrEBXczgCch8_KRGcqZVLETh7krJKrXyv0xSO9q5CGuie9kHgGuBxZD79N8tu/pub?gid=964821390&single=true&output=csv'; // <--- Paste your Published CSV link here
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQkAq1_jVuTCRqMZNJrEBXczgCch8_KRGcqZVLETh7krJKrXyv0xSO9q5CGuie9kHgGuBxZD79N8tu/pub?output=csv';
     let fullData = [];
     let chart;
+    const colors = { 'Udoy':'#facc15', 'AccessTel':'#a855f7', 'RangsIT':'#f97316', 'Orbit':'#3b82f6', 'ICC':'#22c55e', 'IncomIT':'#ec4899' };
 
     async function fetchData() {
         Papa.parse(sheetURL, {
             download: true,
             header: true,
-            dynamicTyping: true,
+            skipEmptyLines: true,
             complete: function(results) {
-                fullData = results.data.filter(d => d.isp && d.bw && d.p);
+                // Mapping based on your Google Sheet headers: Price, ISP, Bandwidth_Mbps
+                fullData = results.data.map(d => ({
+                    isp: d.ISP ? d.ISP.trim() : 'Unknown',
+                    bw: parseInt(d.Bandwidth_Mbps) || 0,
+                    p: parseInt(d.Price) || 0
+                })).filter(d => d.bw > 0);
+                
+                populateISPFilter();
                 updateUI();
             }
         });
     }
 
+    function populateISPFilter() {
+        const ispSelect = document.getElementById('ispFilter');
+        const uniqueISPs = ['All', ...new Set(fullData.map(d => d.isp))];
+        ispSelect.innerHTML = uniqueISPs.map(isp => `<option value="${isp}">${isp}</option>`).join('');
+    }
+
     function updateUI() {
         const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        const selectedISP = document.getElementById('ispFilter').value;
         const priceRange = document.getElementById('priceFilter').value;
 
         const filtered = fullData.filter(d => {
-            const matchesQuery = d.isp.toLowerCase().includes(query) || d.bw.toString() === query;
+            const matchesQuery = d.isp.toLowerCase().includes(query) || d.bw.toString().includes(query) || d.p.toString().includes(query);
+            const matchesISP = (selectedISP === 'All' || d.isp === selectedISP);
             let matchesPrice = true;
             if (priceRange !== 'All') {
                 const [min, max] = priceRange.split('-').map(Number);
                 matchesPrice = (d.p >= min && d.p <= max);
             }
-            return (query === "" || matchesQuery) && matchesPrice;
+            return (query === "" || matchesQuery) && matchesISP && matchesPrice;
         });
 
         document.getElementById('statTotal').innerText = filtered.length;
         document.getElementById('statSpeed').innerText = (filtered.length ? Math.max(...filtered.map(d=>d.bw)) : 0) + ' Mbps';
         const avg = filtered.length ? filtered.reduce((a,c)=>a+c.p,0)/filtered.length : 0;
         document.getElementById('statAvg').innerText = '৳' + avg.toFixed(0);
-        
+        const best = filtered.length ? Math.max(...filtered.map(d=>d.bw/d.p)) : 0;
+        document.getElementById('statValue').innerText = best.toFixed(4);
+
         const tbody = document.getElementById('dataTable');
-        tbody.innerHTML = filtered.map(d => `
+        tbody.innerHTML = filtered.sort((a,b)=>a.p - b.p).map(d => `
             <tr>
-                <td><span class="badge" style="background:#38bdf8">${d.isp}</span></td>
+                <td><span class="badge" style="background:${colors[d.isp] || '#6366f1'}">${d.isp}</span></td>
                 <td><b>${d.bw} Mbps</b></td>
                 <td>৳${d.p}</td>
-                <td>${(d.bw/d.p).toFixed(4)}</td>
+                <td style="color:var(--accent)">${(d.bw/d.p).toFixed(4)}</td>
             </tr>
         `).join('');
 
@@ -130,14 +152,13 @@
             type: 'bar',
             data: {
                 labels: data.map(d => d.isp + ' ' + d.bw + 'M'),
-                datasets: [{ label: 'Price', data: data.map(d => d.p), backgroundColor: '#38bdf8', borderRadius: 5 }]
+                datasets: [{ label: 'Price (TK)', data: data.map(d => d.p), backgroundColor: data.map(d => colors[d.isp] || '#6366f1'), borderRadius: 6 }]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
-    fetchData(); // Initial load
-    setInterval(fetchData, 30000); // Auto-refresh every 30 seconds
+    fetchData();
 </script>
 </body>
 </html>
